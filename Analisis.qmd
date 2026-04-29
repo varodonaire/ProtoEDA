@@ -1,23 +1,24 @@
------
-title: “Análisis Exploratorio de Datos”
-subtitle: “Encuesta de hábitos — Estadística Aplicada”
-author: “Profesor Álvaro”
+---
+title: Análisis Exploratorio de Datos
+subtitle: Encuesta de hábitos — Estadística Aplicada
+author: Álvaro Mattus Donaire
 date: today
 lang: es
 format:
-html:
-toc: true
-toc-depth: 3
-toc-title: “Contenidos”
-number-sections: true
-theme: cosmo
-code-fold: show
-code-tools: true
-self-contained: true
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: “Contenidos”
+    number-sections: true
+    theme: cosmo
+    code-fold: show
+    code-tools: true
+    self-contained: true
 execute:
-warning: false
-message: false
-echo: true
+  warning: false
+  message: false
+  echo: true
+---
 
 ```{r}
 #| label: setup
