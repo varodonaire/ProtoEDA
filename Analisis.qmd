@@ -1,0 +1,508 @@
+-----
+title: “Análisis Exploratorio de Datos”
+subtitle: “Encuesta de hábitos — Estadística Aplicada”
+author: “Profesor Álvaro”
+date: today
+lang: es
+format:
+html:
+toc: true
+toc-depth: 3
+toc-title: “Contenidos”
+number-sections: true
+theme: cosmo
+code-fold: show
+code-tools: true
+self-contained: true
+execute:
+warning: false
+message: false
+echo: true
+
+```{r}
+#| label: setup
+#| include: false
+library(tidyverse)
+library(readxl)
+library(patchwork)
+```
+
+## Contexto y objetivo
+
+Este análisis usa datos recolectados en clase mediante una encuesta breve.
+El objetivo no es solo obtener resultados, sino recorrer el **proceso** completo
+de un análisis exploratorio: cargar datos, limpiarlos, visualizarlos e
+interpretarlos.
+
+La pregunta central que guía el análisis es:
+
+> ¿Qué patrones de hábitos (sueño, estudio, uso de redes) se observan en
+> estudiantes universitarios, y cómo se relacionan con variables como trabajar
+> o el medio de transporte?
+
+-----
+
+## Carga y preparación de datos
+
+Antes de graficar cualquier cosa, hay que entender qué tenemos. El primer paso
+es siempre cargar los datos y revisar su estructura.
+
+```{r}
+#| label: carga-datos
+
+datos <- read_excel("Dudas(1-27).xlsx") |>
+  select(
+    sueno      = `¿Cuántas horas dormiste anoche?`,
+    traslado   = `¿Cuánto tardas en llegar a la U? (En minutos)`,
+    apps       = `¿Cuántas apps tienes instaladas en tu celular aprox?`,
+    estatura   = `¿Cuál es tu estatura? (En centímetros)`,
+    redes      = `¿Cuántas horas al día usas redes sociales en promedio?`,
+    estudio    = `¿Cuántas horas a la semana en promedio estudias fuera de clases?`,
+    transporte = `¿Cómo llegas a la U? (Último tramo)`,
+    trabaja    = `¿Tienes trabajo remunerado además de estudiar?`
+  ) |>
+  mutate(
+    trabaja    = factor(trabaja),
+    transporte = factor(transporte),
+    across(c(sueno, traslado, apps, estatura, redes, estudio), as.numeric)
+  )
+```
+
+### Inspección inicial
+
+Antes de cualquier análisis, revisamos dimensiones, tipos de variables y
+valores faltantes. Esta etapa se omite con frecuencia — es un error.
+
+```{r}
+#| label: inspeccion
+
+glimpse(datos)
+```
+
+```{r}
+#| label: valores-faltantes
+
+datos |>
+  summarise(across(everything(), ~ sum(is.na(.)))) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "NA_count")
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+¿Hay variables con muchos valores faltantes? ¿Qué podría explicar eso en el
+contexto de una encuesta en clase?
+:::
+
+### Limpieza
+
+Algunos valores son claramente erróneos. Por ejemplo, estaturas menores a 100 cm
+no corresponden a personas adultas.
+
+```{r}
+#| label: limpieza
+
+datos <- datos |>
+  filter(estatura > 100)
+```
+
+::: {.callout-warning}
+
+## Para discutir en clase
+
+¿Qué criterio usamos para decidir que un dato es un error y no solo un valor
+atípico? ¿Qué hacemos cuando no estamos seguros?
+:::
+
+-----
+
+## Variables categóricas
+
+Las variables categóricas se resumen con frecuencias absolutas. El gráfico de
+barras es la herramienta estándar.
+
+### Medio de transporte
+
+```{r}
+#| label: fig-transporte
+#| fig-cap: "Frecuencia de cada medio de transporte"
+
+ggplot(datos, aes(x = fct_infreq(transporte), fill = transporte)) +
+  geom_bar() +
+  labs(title = "Medio de transporte (último tramo)", x = NULL, y = "Frecuencia") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Trabajo remunerado
+
+```{r}
+#| label: fig-trabaja
+#| fig-cap: "Proporción de estudiantes con trabajo remunerado"
+
+ggplot(datos, aes(x = trabaja, fill = trabaja)) +
+  geom_bar() +
+  labs(title = "¿Trabaja además de estudiar?", x = NULL, y = "Frecuencia") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+:::
+
+-----
+
+## Variables numéricas: distribución univariada
+
+Para cada variable numérica, queremos responder tres preguntas:
+
+1. ¿Dónde está el centro?
+1. ¿Qué tan dispersos están los datos?
+1. ¿Tiene la distribución alguna forma particular (sesgo, multimodalidad)?
+
+Usamos histogramas y boxplots. Empezamos sin marcas para leer la forma,
+luego agregamos media y mediana.
+
+### Funciones auxiliares
+
+```{r}
+#| label: helpers
+
+# Calcula media y mediana de una variable
+marcas <- function(var) {
+  datos |>
+    summarise(
+      media   = mean({{ var }}, na.rm = TRUE),
+      mediana = median({{ var }}, na.rm = TRUE)
+    )
+}
+
+# Histograma sin marcas
+hist_simple <- function(var, etiqueta) {
+  ggplot(datos, aes(x = {{ var }})) +
+    geom_histogram(bins = 10, fill = "steelblue", color = "white") +
+    labs(title = etiqueta, x = etiqueta, y = "Frecuencia") +
+    theme_minimal()
+}
+
+# Histograma con media y mediana
+hist_marcas <- function(var, etiqueta) {
+  m <- marcas({{ var }})
+  ggplot(datos, aes(x = {{ var }})) +
+    geom_histogram(bins = 10, fill = "steelblue", color = "white") +
+    geom_vline(xintercept = m$media,   color = "red",    linewidth = 1) +
+    geom_vline(xintercept = m$mediana, color = "orange", linewidth = 1,
+               linetype = "dotted") +
+    annotate("text", x = m$media,   y = Inf, label = "media",
+             color = "red",    vjust = 2, hjust = -0.1, size = 3.5) +
+    annotate("text", x = m$mediana, y = Inf, label = "mediana",
+             color = "orange", vjust = 2, hjust = -0.1, size = 3.5) +
+    labs(title = etiqueta, x = etiqueta, y = "Frecuencia") +
+    theme_minimal()
+}
+```
+
+### Vista general
+
+Un primer vistazo a todas las variables a la vez:
+
+```{r}
+#| label: fig-histogramas-todos
+#| fig-cap: "Histogramas de todas las variables numéricas"
+#| fig-height: 7
+
+datos |>
+  select(where(is.numeric)) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "valor") |>
+  ggplot(aes(x = valor)) +
+  geom_histogram(bins = 10, fill = "steelblue", color = "white") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Histogramas — todas las variables") +
+  theme_minimal()
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+¿Qué variables parecen simétricas? ¿Cuáles tienen sesgo? ¿Hay alguna que
+llame la atención por su forma?
+:::
+
+### Análisis variable a variable
+
+#### Horas de sueño
+
+```{r}
+#| label: fig-sueno-comparacion
+#| fig-cap: "Horas de sueño: sin y con marcas de posición central"
+
+p1 <- hist_simple(sueno, "Sin marcas")
+p2 <- hist_marcas(sueno, "Con media y mediana")
+p1 + p2 + plot_annotation(title = "Horas de sueño")
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+¿Coinciden media y mediana? ¿Qué nos dice eso sobre la simetría de la
+distribución? ¿El valor promedio de sueño es razonable para esta población?
+:::
+
+#### Tiempo de traslado
+
+```{r}
+#| label: fig-traslado-comparacion
+#| fig-cap: "Tiempo de traslado: sin y con marcas de posición central"
+
+p3 <- hist_simple(traslado, "Sin marcas")
+p4 <- hist_marcas(traslado, "Con media y mediana")
+p3 + p4 + plot_annotation(title = "Traslado (minutos)")
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+:::
+
+#### Curva de densidad: estatura
+
+El histograma depende del número de bins. La curva de densidad nos da una
+visión más suave de la forma de la distribución.
+
+```{r}
+#| label: fig-densidad-estatura
+#| fig-cap: "Curva de densidad — estatura"
+
+ggplot(datos, aes(x = estatura)) +
+  geom_density(fill = "steelblue", alpha = 0.4) +
+  labs(title = "Estatura (cm)", x = "Estatura (cm)", y = "Densidad") +
+  theme_minimal()
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+¿La distribución de estaturas tiene la forma que esperabas? ¿Hay algún
+patrón llamativo?
+:::
+
+-----
+
+## Dispersión y valores atípicos: boxplots
+
+El boxplot muestra cuartiles, rango intercuartílico y valores atípicos de un
+vistazo. Lo usamos cuando queremos comparar dispersión, no solo centro.
+
+### Funciones auxiliares
+
+```{r}
+#| label: helpers-boxplot
+
+box_simple <- function(var, etiqueta) {
+  ggplot(datos, aes(x = {{ var }})) +
+    geom_boxplot(fill = "steelblue", width = 0.4) +
+    labs(title = etiqueta, x = etiqueta) +
+    theme_minimal() +
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+}
+
+box_con_media <- function(var, etiqueta) {
+  m <- marcas({{ var }})
+  ggplot(datos, aes(x = {{ var }})) +
+    geom_boxplot(fill = "steelblue", width = 0.4) +
+    annotate("point", y = 0, x = m$media, color = "red", size = 3, shape = 18) +
+    labs(title = etiqueta, subtitle = "◆ media", x = etiqueta) +
+    theme_minimal() +
+    theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+}
+```
+
+### Vista general
+
+```{r}
+#| label: fig-boxplots-todos
+#| fig-cap: "Boxplots de todas las variables numéricas"
+#| fig-height: 7
+
+datos |>
+  select(where(is.numeric)) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "valor") |>
+  ggplot(aes(x = variable, y = valor)) +
+  geom_boxplot(fill = "steelblue") +
+  facet_wrap(~variable, scales = "free") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+```
+
+### Comparación con y sin media
+
+Agregar la media al boxplot nos permite ver si está desplazada respecto a la
+mediana — lo que indica asimetría.
+
+```{r}
+#| label: fig-box-sueno
+#| fig-cap: "Boxplot de horas de sueño"
+
+box_simple(sueno,    "Sin media")  |> print()
+box_con_media(sueno, "Con media")  |> print()
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+¿Hay valores atípicos? ¿La media está por encima o por debajo de la mediana?
+¿Qué implica eso?
+:::
+
+-----
+
+## Análisis bivariado: ¿quién duerme más, quién estudia más?
+
+Ahora cruzamos variables para buscar relaciones. La pregunta que hacemos
+siempre es: **¿importa el grupo al que pertenece una persona?**
+
+### Variables numéricas según trabaja/no trabaja
+
+```{r}
+#| label: fig-sueno-trabaja
+#| fig-cap: "Horas de sueño según trabaja"
+
+ggplot(datos, aes(x = trabaja, y = sueno, fill = trabaja)) +
+  geom_boxplot() +
+  labs(title = "Sueño según trabaja", x = NULL, y = "Horas de sueño") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+#| label: fig-estudio-trabaja
+#| fig-cap: "Horas de estudio semanal según trabaja"
+
+ggplot(datos, aes(x = trabaja, y = estudio, fill = trabaja)) +
+  geom_boxplot() +
+  labs(title = "Horas de estudio según trabaja", x = NULL, y = "Horas semanales") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+#| label: fig-redes-trabaja
+#| fig-cap: "Uso de redes sociales según trabaja"
+
+ggplot(datos, aes(x = trabaja, y = redes, fill = trabaja)) +
+  geom_boxplot() +
+  labs(title = "Redes sociales según trabaja", x = NULL, y = "Horas diarias") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+¿Hay diferencias notables entre quienes trabajan y quienes no? ¿En qué
+variable se observa la diferencia más grande? ¿Podríamos afirmar que
+trabajar *causa* esa diferencia?
+:::
+
+### Traslado según medio de transporte
+
+```{r}
+#| label: fig-traslado-transporte
+#| fig-cap: "Tiempo de traslado según medio de transporte"
+
+ggplot(datos, aes(x = transporte, y = traslado, fill = transporte)) +
+  geom_boxplot() +
+  labs(title = "Traslado según medio de transporte",
+       x = NULL, y = "Minutos") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+:::
+
+-----
+
+## Relaciones entre variables numéricas: diagramas de dispersión
+
+El scatterplot nos permite ver si dos variables numéricas están relacionadas.
+La línea de tendencia es solo una referencia visual — no es un modelo todavía.
+
+```{r}
+#| label: fig-scatter-redes-sueno
+#| fig-cap: "Relación entre uso de redes sociales y horas de sueño"
+
+ggplot(datos, aes(x = redes, y = sueno)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, color = "steelblue") +
+  labs(title = "Redes sociales vs sueño",
+       x = "Horas en redes", y = "Horas de sueño") +
+  theme_minimal()
+```
+
+```{r}
+#| label: fig-scatter-estudio-sueno
+#| fig-cap: "Relación entre horas de estudio y horas de sueño"
+
+ggplot(datos, aes(x = estudio, y = sueno)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, color = "steelblue") +
+  labs(title = "Horas de estudio vs sueño",
+       x = "Horas de estudio semanal", y = "Horas de sueño") +
+  theme_minimal()
+```
+
+```{r}
+#| label: fig-scatter-traslado-estudio
+#| fig-cap: "Traslado vs horas de estudio, separado por trabaja"
+
+ggplot(datos, aes(x = traslado, y = estudio, color = trabaja)) +
+  geom_point(alpha = 0.7, size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Traslado vs horas de estudio",
+       x = "Traslado (min)", y = "Horas de estudio semanal",
+       color = "¿Trabaja?") +
+  theme_minimal()
+```
+
+::: {.callout-note}
+
+## Interpretación
+
+¿Las relaciones que ves tienen sentido? ¿Cuáles son más fuertes visualmente?
+¿Hay alguna que te sorprenda? ¿Correlación implica causalidad?
+:::
+
+-----
+
+## Resumen y próximos pasos
+
+::: {.callout-important}
+
+## Para completar en clase
+
+Resumir los hallazgos principales del análisis:
+
+- Variable con mayor dispersión relativa: …
+- Variable con distribución más asimétrica: …
+- Relación más interesante encontrada: …
+- Pregunta que este análisis *no puede* responder con estos datos: …
+  :::
+
+El análisis exploratorio es el punto de partida. Los siguientes pasos naturales
+son cuantificar las relaciones (correlación, regresión) y evaluar si las
+diferencias observadas entre grupos son estadísticamente significativas
+(pruebas de hipótesis, ANOVA).
