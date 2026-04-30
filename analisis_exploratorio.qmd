@@ -31,32 +31,23 @@ library(skimr)
 
 ## Contexto y objetivo
 
-Este análisis usa datos recolectados en clase mediante una encuesta breve.
-El objetivo no es solo obtener resultados, sino recorrer el **proceso** completo
-de un análisis exploratorio: cargar datos, limpiarlos, visualizarlos e
-interpretarlos.
+Este análisis usa datos recolectados en clase mediante una encuesta breve. El objetivo no es solo obtener resultados, sino recorrer el proceso completo de un análisis exploratorio: cargar datos, limpiarlos, visualizarlos e interpretarlos.
 
 La pregunta central que guía el análisis es:
 
-> ¿Qué patrones de hábitos (sueño, estudio, uso de redes) se observan en
-> estudiantes universitarios, y cómo se relacionan con variables como trabajar
-> o el medio de transporte?
+> ¿Qué patrones de hábitos (sueño, estudio, uso de redes) se observan en estudiantes universitarios, y cómo se relacionan con variables como trabajar  o el medio de transporte?
 
 ::: {.callout-important}
 ## Antes de empezar: el tamaño importa
 
-La muestra es de **n = 27 estudiantes**. Todo lo que se observa aquí es
-**descriptivo** — describe a este grupo en este momento. No podemos generalizar
-a toda la población estudiantil ni hacer inferencias formales sin pruebas
-estadísticas adicionales. Veremos esto más adelante en el curso.
+La muestra es de *n = 27 estudiantes.* Todo lo que se observa aquí es *descriptivo* — describe a este grupo en este momento. No podemos generalizar a toda la población estudiantil ni hacer inferencias formales sin pruebas estadísticas adicionales. Veremos esto más adelante en el curso.
 :::
 
 ---
 
 ## Carga y preparación de datos
 
-Antes de graficar cualquier cosa, hay que entender qué tenemos. El primer paso
-es siempre cargar los datos y revisar su estructura.
+Lo primero siempre es cargar y revisar la estructura de los datos
 
 ```{r}
 #| label: carga-datos
@@ -81,8 +72,7 @@ datos <- read_excel("Dudas(1-27).xlsx") |>
 
 ### Inspección inicial
 
-Antes de cualquier análisis, revisamos dimensiones, tipos de variables y
-valores faltantes. Esta etapa se omite con frecuencia — es un error.
+Antes de cualquier análisis, debemos revisar las dimensiones de los datos, qué tipos de variables hay presentes y si hay valores faltantes o extremos. Es fácil olvidarse de hacer esto, pero es mala idea porque influirá en el análisis posterior.
 
 ```{r}
 #| label: inspeccion
@@ -98,8 +88,7 @@ datos |>
 
 ::: {.callout-note}
 ## Interpretación
-No hay valores faltantes en ninguna variable. En una encuesta respondida en
-clase eso es esperable — el contexto presencial reduce la tasa de no respuesta.
+No hay valores faltantes en ninguna variable. En una encuesta respondida en clase eso es esperable porque el contexto presencial reduce la tasa de no respuesta.
 :::
 
 ### Limpieza
@@ -114,18 +103,13 @@ datos <- datos |>
 ```
 
 ::: {.callout-warning}
-## Para discutir en clase
-¿Qué criterio usamos para decidir que un dato es un **error** y no solo un
-**valor atípico**? Una estatura de 50 cm es imposible en un adulto, así que la
-eliminamos. Pero un estudiante que dice estudiar 25 horas semanales — ¿es un
-error o simplemente un caso extremo? La diferencia importa: un error se elimina,
-un valor atípico se conserva (y se menciona).
+## Para discutir
+¿Qué criterio usamos para decidir que un dato es un *error* y no solo un *valor atípico?* Una estatura de 50 cm es imposible en un adulto, así que la eliminamos. Pero un estudiante que dice estudiar 25 horas semanales, ¿es un error o simplemente un caso extremo? La diferencia es importante porque los errores los eliminamos, pero los valores atípicos se conservan y se menciona qué los hace atípicos. Lo conveniente es tener una regla de decisión previamente determinada.
 :::
 
 ### Resumen estadístico
 
-Antes de cualquier gráfico, conviene tener los números en la mano. Esto nos
-da una primera idea de rangos, medias y posibles anomalías.
+Un resumen estadístico nos muestra una primera aproximación a los datos. Esto nos da una idea de rangos, medias y posibles anomalías, como valores extremos.
 
 ```{r}
 #| label: resumen
@@ -134,18 +118,16 @@ skim(datos)
 
 ::: {.callout-note}
 ## Qué observar en esta tabla
-Tres cosas: (1) el rango de cada variable — ¿hay valores que no tienen sentido?;
-(2) la diferencia entre media y mediana — si son muy distintas, hay sesgo;
-(3) la variable `apps` muestra una media notablemente mayor que la mediana,
-lo que anticipa que hay al menos un valor muy alto que jala la media hacia arriba.
+1. El rango de cada variable — ¿hay valores que no tienen sentido?
+2. La diferencia entre media y mediana — si son muy distintas, hay sesgo-
+3. La variable `apps` muestra una media notablemente mayor que la mediana, lo que anticipa que hay al menos un valor muy alto que lleva la media hacia arriba.
 :::
 
 ---
 
-## Variables categóricas
+## Variables cualitativas
 
-Las variables categóricas se resumen con frecuencias absolutas. El gráfico de
-barras es la herramienta estándar.
+Las variables cualitativas se resumen generalmente con frecuencias absolutas. El gráfico de barras es el gráfico estándar.
 
 ### Medio de transporte
 
@@ -163,8 +145,8 @@ ggplot(datos, aes(x = fct_infreq(transporte), fill = transporte)) +
 ::: {.callout-note}
 ## Interpretación
 La micro es el medio más frecuente, seguida por bus de acercamiento y auto.
-Esta distribución es relevante para interpretar los tiempos de traslado
-que veremos más adelante — los grupos no son del mismo tamaño.
+
+Esta distribución es relevante para interpretar los tiempos de traslado que aparecen más adelante, porque los grupos no son del mismo tamaño.
 :::
 
 ### Trabajo remunerado
@@ -182,23 +164,20 @@ ggplot(datos, aes(x = trabaja, fill = trabaja)) +
 
 ::: {.callout-note}
 ## Interpretación
-Aproximadamente un tercio del curso trabaja. Es suficiente para comparar
-hábitos entre grupos, aunque con n pequeño los resultados hay que tomarlos
-con cautela.
+Aproximadamente un tercio de las personas que respondieron trabaja. Es suficiente para comparar hábitos entre grupos, aunque con $n$ pequeño los resultados hay que tomarlos con cuidado.
 :::
 
 ---
 
-## Variables numéricas: distribución univariada
+## Variables cuantitativas: distribución univariada
 
-Para cada variable numérica, queremos responder tres preguntas:
+Para cada variable cuantitativa, queremos responder tres preguntas:
 
 1. ¿Dónde está el centro?
 2. ¿Qué tan dispersos están los datos?
-3. ¿Tiene la distribución alguna forma particular (sesgo, multimodalidad)?
+3. ¿Tiene la distribución alguna forma particular (sesgo, más de una moda)?
 
-Usamos histogramas y boxplots. Empezamos sin marcas para leer la forma,
-luego agregamos media y mediana.
+Usamos histogramas y boxplots. Empezamos sin marcas para leer la forma, luego agregamos media y mediana.
 
 ### Funciones auxiliares
 
@@ -257,10 +236,7 @@ datos |>
 
 ::: {.callout-note}
 ## Interpretación
-De un vistazo: `estatura` es la única variable con forma aproximadamente
-simétrica. `apps`, `estudio` y `traslado` tienen sesgo a la derecha — cola
-larga hacia valores altos. `sueno` y `redes` son relativamente simétricas.
-`traslado` muestra una forma inusual que vale la pena examinar más de cerca.
+De un vistazo: `estatura` es la única variable con forma aproximadamente simétrica. `apps`, `estudio` y `traslado` tienen sesgo a la derecha — cola larga hacia valores altos. `sueno` y `redes` son relativamente simétricas. `traslado` muestra una forma inusual que vale la pena examinar más de cerca.
 :::
 
 ### Análisis variable a variable
@@ -278,10 +254,7 @@ p1 + p2 + plot_annotation(title = "Horas de sueño")
 
 ::: {.callout-note}
 ## Interpretación
-Media y mediana coinciden cerca de las 6–7 horas — distribución
-relativamente simétrica. El rango va de 3 a 9 horas. Para una población
-universitaria, una mediana de 6–7 horas está levemente por debajo de
-las 8 horas recomendadas.
+Media y mediana coinciden cerca de las 6–7 horas — distribución relativamente simétrica. El rango va de 3 a 9 horas. Para una población universitaria, una mediana de 6–7 horas está levemente por debajo de las 8 horas recomendadas.
 :::
 
 #### Tiempo de traslado
@@ -297,12 +270,7 @@ p3 + p4 + plot_annotation(title = "Traslado (minutos)")
 
 ::: {.callout-note}
 ## Interpretación
-Esta distribución tiene forma **bimodal**: hay un grupo que tarda ~30 min y
-otro que tarda ~90–120 min. No es sesgo — son dos subgrupos distintos,
-probablemente auto vs micro. La media (~75 min) no representa bien a nadie
-porque cae entre los dos grupos. Este es un ejemplo clásico de por qué la
-media puede ser engañosa: un número promedio que no describe a ningún
-individuo real.
+Esta distribución tiene forma *bimodal:* hay un grupo que demora entre 30 y 60 min y otro que demora entre 90 y 120 min. No es que haya sesgo, si no que son dos subgrupos distintos, probablemente auto vs micro. La media (~75 min) no representa bien a nadie porque cae entre los dos grupos. Este es un buen ejemplo de por qué la media puede ser engañosa.
 :::
 
 #### Aplicaciones instaladas
@@ -318,17 +286,12 @@ p5 + p6 + plot_annotation(title = "Apps instaladas")
 
 ::: {.callout-note}
 ## Interpretación
-Hay un valor extremo cercano a 168 apps que se aleja del resto del grupo,
-concentrado entre 15 y 90. Este valor jala la media hacia arriba, creando
-una diferencia visible con la mediana. A diferencia del caso de la estatura,
-168 apps *es* posible — hay personas que acumulan apps sin eliminarlas. El
-criterio para mantener o eliminar este dato debe ser explícito y justificado.
+Hay un valor extremo cercano a 168 apps que se aleja del resto del grupo, concentrado entre 15 y 90. Este valor lleva la media hacia arriba, creando una diferencia visible con la mediana. A diferencia del caso de la estatura, 168 apps *es* posible: hay personas que acumulan apps sin eliminarlas. El criterio para mantener o eliminar este dato debe ser explícito y justificado.
 :::
 
 #### Curva de densidad: estatura
 
-El histograma depende del número de bins. La curva de densidad da una
-visión más suave de la forma de la distribución.
+El histograma depende del número de bins. La curva de densidad da una visión más suave de la forma de la distribución.
 
 ```{r}
 #| label: fig-densidad-estatura
@@ -342,18 +305,14 @@ ggplot(datos, aes(x = estatura)) +
 
 ::: {.callout-note}
 ## Interpretación
-La distribución de estaturas tiene forma aproximadamente normal, centrada
-cerca de 170–172 cm. Es uno de los pocos fenómenos biológicos que produce
-esta forma de campana incluso en muestras pequeñas. En un curso con
-composición mixta de género, probablemente veríamos bimodalidad aquí también.
+La distribución de estaturas tiene forma aproximadamente normal, centrada cerca de 170–172 cm. Es divertido que incluso en muestras pequeñas, como la que tenemos, tiende a aparecer una forma relativamente cercana a la campana. En un curso con una proporción más cercana a $1:1$ entre hombres y mujeres probablemente veríamos algo más bimodal.
 :::
 
 ---
 
 ## Dispersión y valores atípicos: boxplots
 
-El boxplot muestra cuartiles, rango intercuartílico y valores atípicos de un
-vistazo. Lo usamos cuando queremos comparar dispersión, no solo centro.
+El boxplot muestra cuartiles, rango intercuartílico y valores atípicos de un vistazo. Lo usamos cuando queremos comparar dispersión, no solo centro.
 
 ### Funciones auxiliares
 
@@ -398,8 +357,7 @@ datos |>
 
 ### Comparación con y sin media
 
-Agregar la media al boxplot permite ver si está desplazada respecto a la
-mediana — lo que indica asimetría.
+Agregar la media al boxplot permite ver si está desplazada respecto a la mediana, lo que indica asimetría.
 
 ```{r}
 #| label: fig-box-sueno
@@ -412,18 +370,14 @@ p7 + p8 + plot_annotation(title = "Horas de sueño")
 
 ::: {.callout-note}
 ## Interpretación
-Media y mediana están muy cerca — confirma la simetría que ya observamos en
-el histograma. No hay valores atípicos marcados. El bigote izquierdo es
-levemente más largo, sugiriendo que hay más variabilidad hacia el lado de
-"dormir poco" que hacia el de "dormir mucho".
+Media y mediana están muy cerca, lo que confirma la simetría que ya observamos en el histograma. No hay valores atípicos marcados. El bigote izquierdo es levemente más largo, sugiriendo que hay más variabilidad hacia el lado de "dormir poco" que hacia el de "dormir mucho".
 :::
 
 ---
 
 ## Análisis bivariado: ¿quién duerme más, quién estudia más?
 
-Ahora cruzamos variables para buscar relaciones. La pregunta que hacemos
-siempre es: **¿importa el grupo al que pertenece una persona?**
+Ahora podemos mezclar variables para buscar relaciones. La pregunta que hacemos siempre es *¿importa el grupo al que pertenece una persona?*
 
 ### Variables numéricas según trabaja/no trabaja
 
@@ -440,9 +394,7 @@ ggplot(datos, aes(x = trabaja, y = sueno, fill = trabaja)) +
 
 ::: {.callout-note}
 ## Interpretación
-Los que trabajan duermen levemente menos, aunque los rangos se superponen
-bastante — hay estudiantes que trabajan y duermen bien, y estudiantes que no
-trabajan y duermen poco. La diferencia existe pero no es dramática.
+Los que trabajan duermen levemente menos, aunque los rangos se superponen un montón: hay estudiantes que trabajan y duermen harto y estudiantes que no trabajan y duermen poco. La diferencia existe pero no es dramática. Para saber si realmente hay una diferencia con cierta confianza deberíamos tener más datos.
 :::
 
 ```{r}
@@ -458,12 +410,8 @@ ggplot(datos, aes(x = trabaja, y = estudio, fill = trabaja)) +
 
 ::: {.callout-note}
 ## Interpretación
-Este resultado es **contraintuitivo**: quienes trabajan estudian *más* horas
-semanales que quienes no trabajan (mediana ~10 vs ~5). La mayoría esperaría
-lo contrario. Esto ilustra por qué el análisis exploratorio es necesario —
-las suposiciones previas no siempre se confirman. Una posible explicación:
-quienes trabajan gestionan mejor su tiempo. Pero cuidado: con n pequeño,
-unos pocos casos extremos pueden cambiar esta imagen por completo.
+Este resultado puede ser contraintuitivo: los que trabajan estudian *más* horas
+semanales que los que no trabajan (mediana ~10 vs ~5). ¿Qué significa? ¿Los que no trabajan son más flojos? Hay que tener cuidado en no responder más de lo que podemos abarcar. En este caso, los conceptos como flojera son difíciles de operacionalizar y también es muy difícil encontrar relaciones *causales* además de simplemente correlaciones. Además, como nuestro $n$ es pequeño, el haber tenido quizás una muestra un poco exótica se hace más visible.
 :::
 
 ```{r}
@@ -479,9 +427,7 @@ ggplot(datos, aes(x = trabaja, y = redes, fill = trabaja)) +
 
 ::: {.callout-note}
 ## Interpretación
-No hay diferencia clara en el uso de redes entre ambos grupos — las
-distribuciones son muy similares. Trabajar no parece asociarse con menos
-(ni más) tiempo en redes sociales.
+No hay diferencia clara en el uso de redes sociales entre los dos grupos. Trabajar no parece estar asociado con menos (ni más) tiempo en redes sociales.
 :::
 
 ### Traslado según medio de transporte
@@ -500,19 +446,19 @@ ggplot(datos, aes(x = transporte, y = traslado, fill = transporte)) +
 
 ::: {.callout-note}
 ## Interpretación
-Este gráfico explica la bimodalidad del histograma de traslado: a pie ~15 min,
-en auto ~30 min, en micro ~90–100 min. La micro además tiene mayor dispersión
-— el tiempo en transporte público es menos predecible. Esto ilustra para qué
-sirve el análisis bivariado: una variable que parecía "rara" en univariada se
-explica completamente al cruzarla con otra.
+Este gráfico explica la bimodalidad del histograma de traslado: 
+- a pie ~15 min
+- en auto ~30 min
+- en micro ~90–100 min. 
+
+ La micro además tiene mayor dispersión. Nuestra experiencia nos muestra que el tiempo en bus es menos predecible. Esto muestra por qué es importante hacer un análisis bivariado: `transporte` en univariado se veía raro, pero ahora podemos ver que tiene varios subgrupos bien distintos.
 :::
 
 ---
 
 ## Relaciones entre variables numéricas: diagramas de dispersión
 
-El scatterplot permite ver si dos variables numéricas están relacionadas.
-La línea de tendencia es solo una referencia visual — no es un modelo todavía.
+El scatterplot permite ver si dos variables numéricas están relacionadas. La línea de tendencia (por ahora) es sólo una referencia visual.
 
 ```{r}
 #| label: fig-scatter-redes-sueno
@@ -528,10 +474,7 @@ ggplot(datos, aes(x = redes, y = sueno)) +
 
 ::: {.callout-note}
 ## Interpretación
-La línea de tendencia es prácticamente horizontal — no hay relación visible
-entre horas en redes y horas de sueño. Esto también es un resultado. A veces
-el análisis exploratorio muestra que dos variables que *intuitivamente* parecen
-relacionadas (más redes → menos sueño) no muestran ese patrón en los datos.
+La línea de tendencia es prácticamente horizontal, así que para estos datos podríamos suponer que no hay relación visible entre horas en redes y horas de sueño. Esto también es un resultado. A veces el análisis exploratorio muestra que dos variables que *intuitivamente* parecen relacionadas (más redes → menos sueño) no muestran ese patrón en los datos.
 :::
 
 ```{r}
@@ -548,10 +491,7 @@ ggplot(datos, aes(x = estudio, y = sueno)) +
 
 ::: {.callout-note}
 ## Interpretación
-Tampoco hay relación clara entre estudio y sueño. La nube de puntos está
-dispersa sin patrón. Con n=27, incluso si hubiera una relación moderada,
-sería difícil detectarla visualmente — se necesitarían más datos o una
-prueba formal de correlación.
+Tampoco hay relación clara entre estudio y sueño. La nube de puntos está dispersa sin patrón. Con $n=27$, incluso si hubiera una relación moderada, sería difícil detectarla visualmente. Necesitaríamos más datos o una prueba formal de correlación.
 :::
 
 ```{r}
@@ -569,12 +509,7 @@ ggplot(datos, aes(x = traslado, y = estudio, color = trabaja)) +
 
 ::: {.callout-note}
 ## Interpretación
-Este es el gráfico más llamativo del análisis. Las dos líneas van en
-**direcciones opuestas**: entre quienes trabajan, más traslado se asocia con
-más estudio; entre quienes no trabajan, más traslado se asocia con menos
-estudio. Esto se llama **interacción** — el efecto de una variable depende del
-valor de otra. Con n=27 puede ser ruido estadístico, pero es el tipo de patrón
-que en un análisis más formal justificaría un modelo con término de interacción.
+Este es el gráfico más llamativo del análisis. Las dos líneas muestran tendencias muy distintas. Entre los que trabajan, más tiempo de traslado se asocia con menos tiempo de estudio. Los que no trabajan muestran una cierta correlación en el mismo sentido pero mucho más débil. Esto es la *interacción* entre estas dos variables: el efecto de una variable depende del valor de otra. Con $n=27$ puede ser ruido estadístico, pero es el tipo de patrón que en un análisis más formal justificaría un modelo con término de interacción.
 :::
 
 ---
@@ -585,13 +520,10 @@ que en un análisis más formal justificaría un modelo con término de interacc
 ## Hallazgos principales
 
 - **Variable con mayor dispersión relativa:** traslado (distribución bimodal, explicada por el medio de transporte)
-- **Variable con sesgo más marcado:** apps (un valor extremo ~168 jala la media)
+- **Variable con sesgo más marcado:** apps (un valor extremo ~168 sube la media)
 - **Resultado más contraintuitivo:** quienes trabajan estudian más horas semanales
 - **Relación más interesante:** posible interacción entre traslado, estudio y trabajar
-- **Pregunta que este análisis no puede responder:** ¿estas diferencias son estadísticamente significativas, o son ruido con n=27?
+- **Pregunta que este análisis no puede responder:** ¿estas diferencias son estadísticamente significativas, o son ruido con $n=27$?
 :::
 
-El análisis exploratorio es el punto de partida. Los siguientes pasos naturales
-son cuantificar las relaciones (correlación, regresión) y evaluar si las
-diferencias observadas entre grupos son estadísticamente significativas
-(pruebas de hipótesis, ANOVA).
+El análisis exploratorio es un punto de partida. Su intención es hacernos ver cómo "funcionan" las variables por sí mismas, qué relaciones podría haber entre ellas, cómo se influencian entre sí. Pero no es el final. Podemos cuantificar las relaciones que encontramos, por ejemplo usando regresión lineal. También podemos ver si hay diferencias *estadísticamente significativas* (más detalles sobre eso pronto) usando pruebas de hipótesis u otras técnicas. Lo que sí nos ayuda es a proponer(nos) conjeturas, que luego trataremos de verificar con las técnicas que mencionaba (entre muchas, muchas, otras).
